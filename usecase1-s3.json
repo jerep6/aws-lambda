@@ -1,0 +1,66 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+	"Parameters" : {
+		"BucketName" : { "Type" : "String" }
+	},
+	"Resources" : {
+		"Lambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "ZipFile" : { "Fn::Join" : [ "", [
+          	"exports.handler = (event, context) => {\n",
+          	"   console.log('Put a file into S3 bucket', JSON.stringify(event));\n",
+          	"   context.done();\n",
+          	"}\n"
+          ] ] }
+        },
+        "FunctionName": "lambda-s3-trigger",
+        "Handler": "index.handler",
+        "MemorySize": "128",
+        "Role": { "Fn::GetAtt": [ "LambdaRole", "Arn" ] },
+        "Runtime": "nodejs4.3",
+        "Timeout": 10
+      }
+    },
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["lambda.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Path": "/",
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/AdministratorAccess"]
+      }
+    },
+    "S3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "BucketOwnerFullControl",
+        "BucketName": {"Ref": "BucketName"},
+        "NotificationConfiguration" : {
+            "LambdaConfigurations" : [{
+                "Event" : "s3:ObjectCreated:*",
+                "Function" : { "Fn::GetAtt": [ "Lambda", "Arn" ] }
+              }]
+        }
+      }
+    },
+    "S3ToLambdaPermission" : {
+      "Type" : "AWS::Lambda::Permission",
+      "Properties" : {
+        "Action" : "lambda:InvokeFunction",
+        "FunctionName" : { "Ref": "Lambda"},
+        "Principal" : "s3.amazonaws.com",
+        "SourceArn": { "Fn::Sub" : "arn:aws:s3:::${BucketName}" }
+      }
+    }
+	}
+}

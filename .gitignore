@@ -1,0 +1,27 @@
+# IDE files
+.idea
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules
+
+# Coverage directory used by tools like istanbul
+coverage
+.sonar
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+*.zip
