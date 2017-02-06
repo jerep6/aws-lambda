@@ -1,0 +1,36 @@
+{
+  "Comment": "Convert hotels and store into database",
+  "StartAt": "Mapping",
+  "States": {
+    "Mapping": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:010154155802:function:stepfunctions-dev-mapping",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.Timeout"],
+          "Next": "ErrorTimeout"
+        },
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ErrorFallback"
+        }
+      ],
+      "Next": "Database"
+    },
+    "ErrorTimeout": {
+      "Type": "Pass",
+      "Result": "Timeout error",
+      "End": true
+    },
+    "ErrorFallback": {
+      "Type": "Pass",
+      "Result": "Unhandle Error",
+      "End": true
+    },
+    "Database": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:010154155802:function:stepfunctions-dev-database",
+      "End": true
+    }
+  }
+}

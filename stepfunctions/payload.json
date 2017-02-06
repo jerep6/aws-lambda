@@ -1,0 +1,32 @@
+[
+  {
+    "hotel_id": "1",
+    "name": "Hotel 1",
+    "currencycode": "EUR",
+    "url": "http://www.booking.com",
+    "location": {
+      "latitude": "-51.31536667660014",
+      "longitude": "3.130255937576294"
+    },
+    "city": "Paris",
+    "price": "89",
+    "address": "Hoogstraat 25",
+    "zip": "8370",
+    "nr_rooms": "58"
+  },
+  {
+    "hotel_id": "42",
+    "name": "Hotel 42",
+    "currencycode": "EUR",
+    "url": "http://www.booking.com",
+    "location": {
+      "latitude": "-51.31536667660014",
+      "longitude": "3.130255937576294"
+    },
+    "city": "Paris",
+    "price": "189",
+    "address": "Rue du temple",
+    "zip": "75002",
+    "nr_rooms": ""
+  }
+]

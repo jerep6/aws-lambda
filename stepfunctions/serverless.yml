@@ -1,0 +1,28 @@
+service: stepfunctions
+
+provider:
+  name: aws
+  profile: xebia-dev
+  region: eu-west-1
+  deploymentBucket: jpinsolle-xebia
+
+  runtime: nodejs4.3
+  versionFunctions: false
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+      Resource: "*"
+
+
+functions:
+  mapping:
+    handler: mapping.handler
+    memorySize: 128
+    timeout: 100
+
+  database:
+      handler: database.handler
+      memorySize: 128
+      timeout: 100

@@ -1,0 +1,14 @@
+{
+  "name": "xebiastepfunctions",
+  "description": "",
+  "version": "1.0.0",
+  "author": "",
+  "engines": {
+    "node": "4",
+    "npm": "2.15.x"
+  },
+  "private": true,
+  "dependencies": {
+    "lodash": "4.17.4"
+  }
+}
