@@ -1,0 +1,16 @@
+service: OperationService
+
+provider:
+  name: aws
+  profile: xebia-dev
+  region: eu-west-1
+  deploymentBucket: jpinsolle-xebia
+
+  runtime: nodejs4.3
+  versionFunctions: false
+
+functions:
+  addition:
+    handler: index.handler
+    memorySize: 128
+    timeout: 10
