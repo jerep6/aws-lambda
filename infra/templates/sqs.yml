@@ -1,0 +1,5 @@
+Resources:
+  sqs1:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: jpinsolle-sqs1

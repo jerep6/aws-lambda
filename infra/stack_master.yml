@@ -1,0 +1,10 @@
+# https://github.com/envato/stack_master
+stack_defaults:
+  tags:
+    Owner: jpinsolle
+stacks:
+  eu-west-1:
+    jpinsolle-ecs:
+      template: ecs.yml
+    jpinsolle-sqs:
+      template: sqs.yml

@@ -1,0 +1,4 @@
+InstanceType: t2.micro
+KeyName: jpinsolle
+VpcId: vpc-19b1977d
+SubnetID: subnet-86d2e3e2
