@@ -5,12 +5,28 @@ provider:
   profile: xebia-dev
   region: eu-west-1
   deploymentBucket: jpinsolle-xebia
-
   runtime: nodejs4.3
   versionFunctions: false
 
 functions:
   addition:
-    handler: index.handler
-    memorySize: 128
-    timeout: 10
+    handler: index.add
+    events:
+     - http:
+        path: add
+        method: GET
+        integration: lambda
+        request:
+          template:
+            application/json: '{ "n1" : $input.params(''n1''), "n2" : $input.params(''n2'') }'
+
+  substraction:
+    handler: index.sub
+    events:
+     - http:
+        path: sub
+        method: POST
+        integration: lambda
+        request:
+          template:
+            application/json: '{ "n1" : $input.path(''$.n1''), "n2" : $input.path(''$.n2'') }'
