@@ -63,14 +63,6 @@ Resources:
           - ContainerPort: 3000
             HostPort: 80
         Environment:
-          - Name: GF_AWS_PROFILES
-            Value: xebiadev
-          - Name: GF_AWS_xebiadev_ACCESS_KEY_ID
-            Value: AKIAIPORGS4WTQMWYULQ
-          - Name: GF_AWS_xebiadev_SECRET_ACCESS_KEY
-            Value: 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
-          - Name: GF_AWS_xebiadev_REGION
-            Value: eu-west-1
           - Name: GF_INSTALL_PLUGINS
             Value: jdbranham-diagram-panel,grafana-clock-panel,grafana-piechart-panel,briangann-gauge-panel,vonage-status-panel
         MountPoints:
