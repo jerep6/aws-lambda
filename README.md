@@ -1,6 +1,6 @@
 
 
-## Démonstration
+## Démonstration Lambda
 
 
 ### Création lambda (slide 4)
@@ -144,3 +144,54 @@ graph LR
 ````
 
 ![](grafana-metrics.png)
+
+
+## Démonstration Step Functions
+
+### HelloWorld
+**State Machine**
+````
+{
+  "Comment": "HelloWorld state machine for the XKE",
+  "StartAt": "Addition",
+  "States": {
+    "Addition": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:eu-west-1:010154155802:function:addition",
+      "End": true
+    }
+  }
+}
+````
+
+**Start Execution**
+````
+{ "n1": 7, "n2": 2 }
+````
+
+
+### Exposition via API Gateway
+Réutilisation de l'API Gateway des lambdas
+
+**1 - Création d'une resource**
+![](stepfunctions-createresource.png)
+
+**2 - Création d'une méthode**
+![](stepfunctions-createmethod.png)
+
+**3 - Déployer l'API**
+
+**4 - Appeler la step functions**
+````
+# Appel
+curl -X POST -d '{
+"input": "{\"n1\": 3, \"n2\": 4}",
+"name": "ExecutionWithAPIGateway1",
+"stateMachineArn": "arn:aws:states:eu-west-1:010154155802:stateMachine:StepFunctionsAddition"
+}' https://fxdimu7fwf.execute-api.eu-west-1.amazonaws.com/dev/stepfunctions
+
+# Réponse
+{"executionArn":"XXX:StepFunctionsAddition:ExecutionWithAPIGateway1", "startDate":1.489350632476E9}
+````
+
+Pas de mécanisme synchrone comme les lambdas. Donc pas moyen de récupérer le résultat de l'appel.

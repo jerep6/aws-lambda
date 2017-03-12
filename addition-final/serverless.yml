@@ -10,6 +10,7 @@ provider:
 
 functions:
   addition:
+    name: additionfinal
     handler: index.add
     events:
      - http:
@@ -21,6 +22,7 @@ functions:
             application/json: '{ "n1" : $input.params(''n1''), "n2" : $input.params(''n2'') }'
 
   substraction:
+    name: substractionfinal
     handler: index.sub
     events:
      - http:
