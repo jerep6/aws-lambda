@@ -1,0 +1,93 @@
+service: stepfunctions-path
+
+custom: $${file(../infra/serverless-variables.yml)}
+
+provider:
+  name: aws
+  profile: $${self:custom.profile}
+  region: $${self:custom.region}
+  deploymentBucket: $${self:custom.deploymentBucket}
+  variableSyntax: '\$\${([\s\S]+?)}'
+
+  runtime: nodejs4.3
+  versionFunctions: false
+
+functions:
+  Lambda1:
+    handler: lambda1.handler
+    name: lambda1
+  Lambda2:
+    handler: lambda2.handler
+    name: lambda2
+
+
+resources:
+  Resources:
+    StatesExecutionRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  "Fn::Sub": "states.${AWS::Region}.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          - PolicyName: StatesExecutionPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+
+    StateMachine:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+        DefinitionString:
+          Fn::Sub: |-
+              {
+                "Comment": "State machine to test path",
+                "StartAt": "Lambda1",
+                "States": {
+
+                  "Lambda1": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Lambda1LambdaFunction}",
+                    "ResultPath": "$.Result.Lambda1",
+                    "Next": "Lambda2"
+                  },
+
+
+                  "Lambda2": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Lambda2LambdaFunction}",
+                    "ResultPath": "$.Result.Lambda2",
+                    "Next": "FinalState"
+                  },
+
+                  "FinalState": {
+                    "Type": "Pass",
+                    "ResultPath": "$.Result",
+                    "Result": {
+                      "FinalStateResult": "72",
+                      "FinalStateEvent": "$.input"
+                    },
+                    "End": true
+                  }
+                }
+              }
+
+        RoleArn:
+          "Fn::GetAtt": [ StatesExecutionRole, Arn ]
+
+
+  Outputs:
+    StateMachineArn:
+      Description: Arn of the state machine
+      Value:
+        "Ref": StateMachine
