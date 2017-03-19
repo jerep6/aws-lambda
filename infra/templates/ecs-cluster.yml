@@ -20,12 +20,12 @@ Parameters:
     Description: EC2 instance type
     Type: String
     Default: t2.micro
-    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
-      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
-      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
-      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
-      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
+    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large]
     ConstraintDescription: Please choose a valid instance type.
+  EcsClusterName:
+    Type: String
+    Default: ecs-cluster
+    Description: ECS Cluster Name
 
 
 Mappings:
@@ -37,59 +37,14 @@ Resources:
   ECSCluster:
     Type: "AWS::ECS::Cluster"
     Properties:
-      ClusterName: jpinsolle
+      ClusterName: !Ref EcsClusterName
 
-  Service:
-    Type: "AWS::ECS::Service"
-    DependsOn: ECSAutoScalingGroup,
-    Properties:
-      Cluster: !Ref ECSCluster
-      DesiredCount: 1
-      TaskDefinition: !Ref TaskGrafana
 
-  TaskGrafana:
-    Type: "AWS::ECS::TaskDefinition"
+  RegistryXmlSplit:
+    Type: "AWS::ECR::Repository"
     Properties:
-      Family: jpinsolle-grafana
-      Volumes:
-      - Name: grafana-database
-        Host:
-          SourcePath: "/home/ec2-user/grafana-database"
-      ContainerDefinitions:
-      - Name: grafana
-        Image: grafana/grafana:4.1.1
-        Memory: 100
-        PortMappings:
-          - ContainerPort: 3000
-            HostPort: 80
-        Environment:
-          - Name: GF_INSTALL_PLUGINS
-            Value: jdbranham-diagram-panel,grafana-clock-panel,grafana-piechart-panel,briangann-gauge-panel,vonage-status-panel
-        MountPoints:
-          - SourceVolume: grafana-database
-            ContainerPath: "/var/lib/grafana"
+      RepositoryName: jpinsolle/activity-hello
 
-  RoleGrafana:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              AWS:
-                - Fn::GetAtt: ["EC2Role", "Arn"]
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        - PolicyName: "cloudwatch"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "cloudwatch:*"
-                Resource: "*"
 
   ECSAutoScalingGroup:
       Type: AWS::AutoScaling::AutoScalingGroup
@@ -99,6 +54,10 @@ Resources:
         MinSize: '1'
         MaxSize: !Ref 'MaxSize'
         DesiredCapacity: !Ref 'DesiredCapacity'
+        Tags:
+          - Key: Name
+            PropagateAtLaunch: true
+            Value: !Sub '${EcsClusterName} ECS'
       CreationPolicy:
         ResourceSignal:
           Timeout: PT15M
@@ -118,8 +77,11 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
+          echo '45 3 * * * root docker images -q -f dangling=true | xargs docker rmi -f' >> /etc/crontab
+          yum update -y
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+
   EC2InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -169,10 +131,6 @@ Resources:
 
 
 Outputs:
-  GrafanaRole:
-    Description: Role to get cloudwatch metrics
-    Value:
-      Fn::GetAtt: ["RoleGrafana", "Arn"]
   ECSCluster:
     Description: Cluster name
     Value: !Ref ECSCluster

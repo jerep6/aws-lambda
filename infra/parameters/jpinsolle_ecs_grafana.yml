@@ -1,0 +1,3 @@
+DockerImage: grafana/grafana:4.1.2
+EcsClusterName:
+  stack_output: jpinsolle-ecs-cluster/ECSCluster

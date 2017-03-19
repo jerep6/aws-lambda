@@ -195,3 +195,18 @@ curl -X POST -d '{
 ````
 
 Pas de mécanisme synchrone comme les lambdas. Donc pas moyen de récupérer le résultat de l'appel.
+
+### Activité
+````
+{
+  "StartAt": "HelloWorld",
+  "States": {
+    "HelloWorld": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:eu-west-1:010154155802:activity:jpinsolle-helloworld",
+      "End": true
+    }
+  }
+}
+
+````

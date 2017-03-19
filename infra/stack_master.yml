@@ -4,7 +4,12 @@ stack_defaults:
     Owner: jpinsolle
 stacks:
   eu-west-1:
-    jpinsolle-ecs:
-      template: ecs.yml
+    jpinsolle-ecs-cluster:
+      template: ecs-cluster.yml
+    jpinsolle-ecs-activity:
+      template: ecs-service-activity.yml
+    jpinsolle-ecs-grafana:
+      template: ecs-service-grafana.yml
+
     jpinsolle-sqs:
       template: sqs.yml
