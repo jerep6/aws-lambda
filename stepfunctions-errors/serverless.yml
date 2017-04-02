@@ -1,0 +1,119 @@
+service: stepfunctions-errors
+
+custom: $${file(../infra/serverless-variables.yml)}
+
+provider:
+  name: aws
+  profile: $${self:custom.profile}
+  region: $${self:custom.region}
+  deploymentBucket: $${self:custom.deploymentBucket}
+  variableSyntax: '\$\${([\s\S]+?)}'
+
+  runtime: nodejs6.10
+  versionFunctions: false
+
+functions:
+  Errors:
+    handler: index.handler
+    name: stepfunctions-errors
+    timeout: 5
+
+
+resources:
+  Resources:
+    StatesExecutionRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  "Fn::Sub": "states.${AWS::Region}.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          - PolicyName: StatesExecutionPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+
+    Errors:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+        DefinitionString:
+          Fn::Sub: |-
+              {
+                "Comment": "State machine to test Errors",
+                "StartAt": "GenerateError",
+                  "States": {
+                    "GenerateError": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ErrorsLambdaFunction}",
+                      "TimeoutSeconds": 2,
+                      "Catch": [
+                        {
+                          "ErrorEquals": ["MyCustomError"],
+                          "Next": "CustomErrorFallback"
+                        },
+                        {
+                          "ErrorEquals": ["States.Permissions"],
+                          "Next": "PermissionsFallback"
+                        },
+                        {
+                          "ErrorEquals": ["States.TaskFailed"],
+                          "Next": "ReservedTypeFallback"
+                        },
+
+                        {
+                          "ErrorEquals": ["States.Timeout"],
+                          "Next": "TimeoutFallback"
+                        },
+                        {
+                          "ErrorEquals": ["States.ALL"],
+                          "Next": "CatchAllFallback"
+                        }
+                      ],
+                      "End": true
+                    },
+                    "CustomErrorFallback": {
+                      "Type": "Pass",
+                      "Result": "This is a fallback from a custom lambda function exception",
+                      "End": true
+                    },
+                    "ReservedTypeFallback": {
+                      "Type": "Pass",
+                      "Result": "This is a fallback from a reserved error code",
+                      "End": true
+                    },
+                    "PermissionsFallback": {
+                      "Type": "Pass",
+                      "Result": "This is a fallback from a permissions error code",
+                      "End": true
+                    },
+                    "TimeoutFallback": {
+                      "Type": "Pass",
+                      "Result": "This is a fallback from a timeout error code",
+                      "End": true
+                    },
+                    "CatchAllFallback": {
+                      "Type": "Pass",
+                      "Result": "This is a fallback from a reserved error code",
+                      "End": true
+                    }
+                  }
+              }
+        RoleArn:
+          "Fn::GetAtt": [ StatesExecutionRole, Arn ]
+
+
+  Outputs:
+    StateMachineArn:
+      Description: Arn of the state machine
+      Value:
+        "Ref": Errors

@@ -1,0 +1,104 @@
+service: stepfunctions-parrallel
+
+custom: $${file(../infra/serverless-variables.yml)}
+
+provider:
+  name: aws
+  profile: $${self:custom.profile}
+  region: $${self:custom.region}
+  deploymentBucket: $${self:custom.deploymentBucket}
+  variableSyntax: '\$\${([\s\S]+?)}'
+
+  runtime: nodejs4.3
+  versionFunctions: false
+
+functions:
+  Addition:
+    handler: index.add
+    name: stepfunctions-addition
+  Substraction:
+    handler: index.sub
+    name: stepfunctions-substraction
+
+
+resources:
+  Resources:
+    StatesExecutionRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  "Fn::Sub": "states.${AWS::Region}.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          - PolicyName: StatesExecutionPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+
+    Parrallel:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+        DefinitionString:
+          Fn::Sub: |-
+              {
+                "Comment": "State machine to test Parallel",
+                "StartAt": "Parallel calculation",
+                "States": {
+                  "Parallel calculation": {
+                    "Type": "Parallel",
+                    "Next": "Save results",
+                    "Branches": [
+                      {
+                        "StartAt": "Addition",
+                        "States": {
+                          "Addition": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AdditionLambdaFunction}",
+                            "ResultPath": "$.Result.Addition",
+                            "End": true
+                          }
+                        }
+                      },
+                      {
+                        "StartAt": "Substraction",
+                        "States": {
+                          "Substraction": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SubstractionLambdaFunction}",
+                            "ResultPath": "$.Result.Substraction",
+                            "End": true
+                          }
+                        }
+                      }
+                    ]
+                  },
+
+                  "Save results": {
+                    "Type": "Pass",
+                    "Result": {
+                      "saveok": true
+                    },
+                    "End": true
+                  }
+                }
+              }
+
+        RoleArn:
+          "Fn::GetAtt": [ StatesExecutionRole, Arn ]
+
+
+  Outputs:
+    StateMachineArn:
+      Description: Arn of the state machine
+      Value:
+        "Ref": Parrallel

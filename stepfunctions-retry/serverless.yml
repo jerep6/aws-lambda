@@ -1,0 +1,93 @@
+service: stepfunctions-errors
+
+custom: $${file(../infra/serverless-variables.yml)}
+
+provider:
+  name: aws
+  profile: $${self:custom.profile}
+  region: $${self:custom.region}
+  deploymentBucket: $${self:custom.deploymentBucket}
+  variableSyntax: '\$\${([\s\S]+?)}'
+
+  runtime: nodejs6.10
+  versionFunctions: false
+
+functions:
+  Errors:
+    handler: index.handler
+    name: stepfunctions-retry
+    timeout: 5
+
+
+resources:
+  Resources:
+    StatesExecutionRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  "Fn::Sub": "states.${AWS::Region}.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          - PolicyName: StatesExecutionPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+
+    Retry:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+        DefinitionString:
+          Fn::Sub: |-
+              {
+                "Comment": "State machine to test Retry",
+                "StartAt": "GenerateError",
+                  "States": {
+                    "GenerateError": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ErrorsLambdaFunction}",
+                      "End": true,
+                      "Retry": [ {
+                          "ErrorEquals": [ "MyCustomError1" ],
+                          "IntervalSeconds": 1,
+                          "BackoffRate": 2.0,
+                          "MaxAttempts": 3
+                        },
+                        {
+                          "ErrorEquals": [ "MyCustomError2" ],
+                          "IntervalSeconds": 5,
+                          "MaxAttempts": 1
+                        }
+                      ],
+                      "Catch": [
+                        {
+                          "ErrorEquals": ["MyCustomError1"],
+                          "Next": "CustomError1Fallback"
+                        }
+                      ]
+                    },
+                    "CustomError1Fallback": {
+                      "Type": "Pass",
+                      "Result": "This is a fallback from a custom lambda function exception",
+                      "End": true
+                    }
+                  }
+              }
+        RoleArn:
+          "Fn::GetAtt": [ StatesExecutionRole, Arn ]
+
+
+  Outputs:
+    StateMachineArn:
+      Description: Arn of the state machine
+      Value:
+        "Ref": Retry

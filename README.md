@@ -149,6 +149,7 @@ graph LR
 ## Démonstration Step Functions
 
 ### HelloWorld
+Création via la console. Appel de la lambda addition déjà définie
 **State Machine**
 ````
 {
@@ -209,4 +210,13 @@ Pas de mécanisme synchrone comme les lambdas. Donc pas moyen de récupérer le 
   }
 }
 
+````
+
+### Gestion des erreurs
+
+stepfunctions-errors
+````
+{ "type": "generic-error" }
+{ "type": "custom-error" }
+{ "type": "timeout" }
 ````
