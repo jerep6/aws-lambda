@@ -1,4 +1,4 @@
-service: stepfunctions-errors
+service: stepfunctions-retry
 
 custom: $${file(../infra/serverless-variables.yml)}
 
