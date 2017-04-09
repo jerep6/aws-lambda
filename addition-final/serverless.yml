@@ -1,11 +1,14 @@
 service: OperationServiceFinal
 
+custom: $${file(../infra/serverless-variables.yml)}
+
 provider:
   name: aws
-  profile: xebia-dev
-  region: eu-west-1
-  deploymentBucket: jpinsolle-xebia
-  runtime: nodejs4.3
+  profile: $${self:custom.profile}
+  region: $${self:custom.region}
+  deploymentBucket: $${self:custom.deploymentBucket}
+  variableSyntax: '\$\${([\s\S]+?)}'
+  runtime: nodejs6.10
   versionFunctions: false
 
 functions:
