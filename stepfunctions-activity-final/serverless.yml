@@ -1,0 +1,100 @@
+service: stepfunctions-activity
+
+custom: $${file(../infra/serverless-variables.yml)}
+
+provider:
+  name: aws
+  profile: $${self:custom.profile}
+  region: $${self:custom.region}
+  deploymentBucket: $${self:custom.deploymentBucket}
+  variableSyntax: '\$\${([\s\S]+?)}'
+
+  runtime: nodejs6.10
+  versionFunctions: false
+
+functions:
+  PersonMapping:
+    handler: lambda-mapping.handler
+    name: stepfunctions-person-mapping
+
+
+resources:
+  Resources:
+    StatesExecutionRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  "Fn::Sub": "states.${AWS::Region}.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          - PolicyName: StatesExecutionPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+
+    EnrichmentActivity:
+      Type: "AWS::StepFunctions::Activity"
+      Properties:
+        Name: jpinsolle-xke-activity
+
+
+    Activity:
+      Type: "AWS::StepFunctions::StateMachine"
+      Properties:
+        DefinitionString:
+          Fn::Sub: |-
+              {
+                "Comment": "State machine to test activity",
+                "StartAt": "Mapping",
+                "States": {
+                  "Mapping": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PersonMappingLambdaFunction}",
+                    "Next": "Enrichment",
+                    "Catch": [
+                      {
+                        "ErrorEquals": ["NoData"],
+                        "Next": "CatchNoData"
+                      }
+                    ]
+                  },
+
+                  "Enrichment": {
+                    "Type": "Task",
+                    "Resource": "${EnrichmentActivity}",
+                    "InputPath": "$.person",
+                    "Next": "Save result"
+                  },
+
+                  "Save result": {
+                    "Type": "Pass",
+                    "Result": { "saveok": true },
+                    "End": true
+                  },
+
+                  "CatchNoData": {
+                    "Type": "Pass",
+                    "End": true
+                  }
+                }
+              }
+
+        RoleArn:
+          "Fn::GetAtt": [ StatesExecutionRole, Arn ]
+
+
+  Outputs:
+    StateMachineArn:
+      Description: Arn of the state machine
+      Value:
+        "Ref": Activity

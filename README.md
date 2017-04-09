@@ -198,18 +198,102 @@ curl -X POST -d '{
 Pas de mécanisme synchrone comme les lambdas. Donc pas moyen de récupérer le résultat de l'appel.
 
 ### Activité
+Dossier stepfunctions-activity
+
+**Compléter le fichier serverless.yml (EnrichmentActivity, Catch NoData, Enrichment, Save Result)**
+
+```javascript
+EnrichmentActivity:
+  Type: "AWS::StepFunctions::Activity"
+  Properties:
+    Name: jpinsolle-xke-activity
+
+
+Activity:
+  Type: "AWS::StepFunctions::StateMachine"
+  Properties:
+    DefinitionString:
+      Fn::Sub: |-
+          {
+            "Comment": "State machine to test activity",
+            "StartAt": "Mapping",
+            "States": {
+              "Mapping": {
+                "Type": "Task",
+                "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PersonMappingLambdaFunction}",
+                "Next": "Enrichment",
+                "Catch": [
+                  {
+                    "ErrorEquals": ["NoData"],
+                    "Next": "CatchNoData"
+                  }
+                ]
+              },
+
+              "Enrichment": {
+                "Type": "Task",
+                "Resource": "${EnrichmentActivity}",
+                "InputPath": "$.person",
+                "Next": "Save results"
+              },
+
+              "Save results": {
+                "Type": "Pass",
+                "Result": { "saveok": true },
+                "End": true
+              },
+
+              "CatchNoData": {
+                "Type": "Pass",
+                "End": true
+              }
+            }
+          }
+
+    RoleArn:
+      "Fn::GetAtt": [ StatesExecutionRole, Arn ]
+
 ````
-{
-  "StartAt": "HelloWorld",
-  "States": {
-    "HelloWorld": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:eu-west-1:010154155802:activity:jpinsolle-helloworld",
-      "End": true
-    }
+
+**Déployer**
+````
+serverless deploy
+````
+
+** Modifier l'activité : custom_activity/activity**
+
+```javascript
+(function runActivity() {
+  console.log('getActivityTask ...');
+
+  stepfunctions.getActivityTask({
+    activityArn: ACTIVITY_ARN,
+    workerName: 'Worker_XKE'
+  }).promise()  // SDK wait 60sec if not data
+    .then(data => {
+      if (data.taskToken) {
+        console.log('Activity to run', JSON.stringify(data, null, 2));
+        return doProccess(data)
+        .then(sendSuccess.bind(null, data.taskToken))
+        .catch(sendFailure.bind(null, data.taskToken));
+      } else {
+        console.log("No activity to run");
+      }
+    })
+    .catch(handleError)
+    .then(runActivity)
+})();
+
+
+function doProccess(data) {
+  try {
+    const person = JSON.parse(data.input);
+    person.premium = person.id.toString().length < 3;
+    return Promise.resolve(person);
+  } catch(e) {
+    return Promise.reject(e);
   }
 }
-
 ````
 
 ### Gestion des erreurs

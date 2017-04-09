@@ -1,0 +1,14 @@
+{
+  "name": "xebia-stepfunctions-activity-mapping",
+  "description": "",
+  "version": "1.0.0",
+  "author": "",
+  "engines": {
+    "node": "6",
+    "npm": "3"
+  },
+  "private": true,
+  "dependencies": {
+    "lodash": "4.17.4"
+  }
+}
