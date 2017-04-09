@@ -40,10 +40,10 @@ Resources:
       ClusterName: !Ref EcsClusterName
 
 
-  RegistryXmlSplit:
+  RegistryActiviteXKE:
     Type: "AWS::ECR::Repository"
     Properties:
-      RepositoryName: jpinsolle/activity-hello
+      RepositoryName: jpinsolle/activity-enrichment
 
 
   ECSAutoScalingGroup:

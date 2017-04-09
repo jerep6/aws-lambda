@@ -1,4 +1,4 @@
-ActivityName: jpinsolle-helloworld
-DockerImage: 010154155802.dkr.ecr.eu-west-1.amazonaws.com/jpinsolle/activity-hello
+ActivityName: jpinsolle-xke-activity-docker
+DockerImage: 010154155802.dkr.ecr.eu-west-1.amazonaws.com/jpinsolle/activity-enrichment
 EcsClusterName:
   stack_output: jpinsolle-ecs-cluster/ECSCluster

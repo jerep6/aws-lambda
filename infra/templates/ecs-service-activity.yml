@@ -8,7 +8,6 @@ Parameters:
   DockerImage:
     Type: String
     Description: Docker image to pull
-
   CloudWatchLogsRetentionInDays:
     Description: The number of days log events are kept in CloudWatch Logs
     Type: Number
@@ -17,6 +16,7 @@ Parameters:
 
 
 Resources:
+
   Activity:
     Type: "AWS::StepFunctions::Activity"
     Properties:
@@ -38,12 +38,12 @@ Resources:
   Task:
     Type: "AWS::ECS::TaskDefinition"
     Properties:
-      Family: jpinsolle-activity-hello
+      Family: jpinsolle-activity-enrichment
       TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
-      - Name: jpinsolle-activity-hello
+      - Name: jpinsolle-activity-enrichment
         Image: !Ref DockerImage
-        Memory: 50
+        Memory: 200
         Environment:
           - Name: ACTIVITY_ARN
             Value: !Ref Activity
@@ -52,7 +52,7 @@ Resources:
           Options:
             awslogs-region: !Ref AWS::Region
             awslogs-group: !Ref LogGroup
-            awslogs-stream-prefix: jpinsolle-activity-hello
+            awslogs-stream-prefix: jpinsolle-activity-xke
 
   TaskRole:
     Type: "AWS::IAM::Role"
