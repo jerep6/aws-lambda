@@ -1,4 +1,4 @@
-service: stepfunctions-activity
+service: stepfunctions-activity-final
 
 custom: $${file(../infra/serverless-variables.yml)}
 
@@ -15,7 +15,7 @@ provider:
 functions:
   PersonMapping:
     handler: lambda-mapping.handler
-    name: stepfunctions-person-mapping
+    name: stepfunctions-person-mapping-final
 
 
 resources:
